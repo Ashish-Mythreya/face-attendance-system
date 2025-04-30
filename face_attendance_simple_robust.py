@@ -9,7 +9,7 @@ from tkinter import messagebox, ttk
 import threading
 import logging
 
-# Suppress TensorFlow warnings
+
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 
 try:
@@ -19,14 +19,14 @@ except ImportError as e:
     print("Ensure tensorflow, numpy, pandas, and deepface are installed correctly.")
     exit(1)
 
-# Set up logging
+
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# Initialize known faces
+
 known_face_names = []
 img_dir = "imgs/"
 
-# Load face images
+
 def load_known_faces():
     if not os.path.exists(img_dir):
         os.makedirs(img_dir)
@@ -39,7 +39,7 @@ def load_known_faces():
         else:
             logging.warning(f"Skipping {img_name}: Unsupported format")
 
-# Initialize CSV file
+
 csv_file = "Attendance.csv"
 def init_csv():
     if not os.path.exists(csv_file):
@@ -48,7 +48,7 @@ def init_csv():
             writer.writerow(["Name", "Time"])
         logging.info(f"Created CSV file: {csv_file}")
 
-# Tkinter popup for attendance confirmation
+
 def show_popup(name):
     try:
         root = tk.Tk()
@@ -58,14 +58,14 @@ def show_popup(name):
     except Exception as e:
         logging.error(f"Error showing popup: {e}")
 
-# Tkinter table for attendance records
+
 def show_attendance_table():
     try:
         def load_table():
             table.delete(*table.get_children())
             with open(csv_file, 'r') as f:
                 reader = csv.reader(f)
-                next(reader)  # Skip header
+                next(reader)  
                 for row in reader:
                     table.insert("", "end", values=row)
 
@@ -80,18 +80,18 @@ def show_attendance_table():
     except Exception as e:
         logging.error(f"Error showing attendance table: {e}")
 
-# Main attendance system
+
 def main():
     load_known_faces()
     init_csv()
 
-    # Attendance tracking with cooldown
-    attendance_log = {}  # {name: last_marked_time}
+    
+    attendance_log = {}  
     COOLDOWN = timedelta(minutes=5)
     frame_count = 0
-    PROCESS_EVERY_N_FRAMES = 5  # Process every 5th frame
+    PROCESS_EVERY_N_FRAMES = 5  
 
-    # Initialize webcam
+    
     cap = cv2.VideoCapture(0)
     if not cap.isOpened():
         logging.error("Could not open webcam")
@@ -106,22 +106,22 @@ def main():
 
         frame_count += 1
         if frame_count % PROCESS_EVERY_N_FRAMES == 0:
-            # Resize frame for faster processing
+            
             try:
                 small_frame = cv2.resize(frame, (0, 0), fx=0.5, fy=0.5)
 
-                # Detect and recognize faces
+                
                 for img_name in os.listdir(img_dir):
                     img_path = os.path.join(img_dir, img_name)
                     if not img_path.lower().endswith(('.jpg', '.jpeg', '.png')):
                         continue
 
                     try:
-                        # Use DeepFace to verify with Facenet
+                        
                         result = DeepFace.verify(
                             small_frame,
                             img_path,
-                            model_name="Facenet",  # Changed to Facenet
+                            model_name="Facenet", 
                             enforce_detection=False,
                             distance_metric="cosine"
                         )
@@ -141,17 +141,17 @@ def main():
             except Exception as e:
                 logging.error(f"Error processing frame: {e}")
 
-        # Display webcam feed
+        
         cv2.imshow("Attendance System", frame)
 
-        # Handle keypress
+       
         key = cv2.waitKey(1) & 0xFF
         if key == ord('q'):
             break
         elif key == ord('g'):
             threading.Thread(target=show_attendance_table, daemon=True).start()
 
-    # Cleanup
+    
     cap.release()
     cv2.destroyAllWindows()
     logging.info("Program terminated")
